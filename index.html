@@ -395,7 +395,10 @@ footer{color:#888;padding:28px 8px 8px;border-top:1px solid #eee;margin-top:26px
     }
   };
 
+  const MAX_LEVEL = 500;
+
   function nextLevelExp() {
+    if (state.level >= MAX_LEVEL) return Infinity;
     return state.level * 100;
   }
 
@@ -404,6 +407,10 @@ footer{color:#888;padding:28px 8px 8px;border-top:1px solid #eee;margin-top:26px
   }
 
   function updateUI() {
+    if (state.level > MAX_LEVEL) state.level = MAX_LEVEL;
+    const isMax = state.level >= MAX_LEVEL;
+    if (isMax) state.exp = 0;
+
     const tokens = document.getElementById("tokens");
     const xp = document.getElementById("xp");
     const level = document.getElementById("level");
@@ -414,9 +421,9 @@ footer{color:#888;padding:28px 8px 8px;border-top:1px solid #eee;margin-top:26px
     const zones = document.getElementById("zones");
     const shopTokens = document.getElementById("shopTokens");
     if (tokens) tokens.textContent = state.tokens;
-    if (xp) xp.textContent = state.exp + "/" + nextLevelExp();
-    if (level) level.textContent = state.level;
-    if (need) need.textContent = Math.max(0, nextLevelExp() - state.exp);
+    if (xp) xp.textContent = isMax ? "MAX (만렙)" : (state.exp + "/" + nextLevelExp());
+    if (level) level.textContent = isMax ? (MAX_LEVEL + " (만렙)") : state.level;
+    if (need) need.textContent = isMax ? 0 : Math.max(0, nextLevelExp() - state.exp);
     if (record) record.textContent = state.lastEvent;
     if (titles) titles.textContent = state.titles.length;
     if (titleList) {
@@ -440,12 +447,24 @@ footer{color:#888;padding:28px 8px 8px;border-top:1px solid #eee;margin-top:26px
   }
 
   function reward(exp, tokens) {
+    if (state.level >= MAX_LEVEL) {
+      state.level = MAX_LEVEL;
+      state.exp = 0;
+      state.tokens += tokens;
+      save();
+      updateUI();
+      return;
+    }
     state.exp += exp;
     state.tokens += tokens;
-    while (state.exp >= nextLevelExp()) {
+    while (state.level < MAX_LEVEL && state.exp >= nextLevelExp()) {
       state.exp -= nextLevelExp();
       state.level++;
-      alert("🎉 LEVEL UP!\nLv." + state.level + " 달성!");
+      alert("🎉 LEVEL UP!\nLv." + state.level + (state.level >= MAX_LEVEL ? " (만렙 달성!)" : "") + " 달성!");
+    }
+    if (state.level >= MAX_LEVEL) {
+      state.level = MAX_LEVEL;
+      state.exp = 0;
     }
     save();
   }
@@ -726,11 +745,23 @@ footer{color:#888;padding:28px 8px 8px;border-top:1px solid #eee;margin-top:26px
 
     if (item === "exp50") {
       state.tokens -= price;
+      if (state.level >= MAX_LEVEL) {
+        state.level = MAX_LEVEL;
+        state.exp = 0;
+        save();
+        updateUI();
+        shopMessage("✅ 이미 최고 만렙(Lv.500)에 도달했습니다!");
+        return;
+      }
       state.exp += 50;
-      while (state.exp >= nextLevelExp()) {
+      while (state.level < MAX_LEVEL && state.exp >= nextLevelExp()) {
         state.exp -= nextLevelExp();
         state.level++;
-        alert("🎉 LEVEL UP!\nLv." + state.level + " 달성!");
+        alert("🎉 LEVEL UP!\nLv." + state.level + (state.level >= MAX_LEVEL ? " (만렙 달성!)" : "") + " 달성!");
+      }
+      if (state.level >= MAX_LEVEL) {
+        state.level = MAX_LEVEL;
+        state.exp = 0;
       }
       save();
       shopMessage("✅ EXP 부스터 구매!\n✨ EXP +50");
