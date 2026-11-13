@@ -356,6 +356,27 @@ footer{color:#888;padding:28px 8px 8px;border-top:1px solid #eee;margin-top:26px
     }
   }
 
+  window.claimLimitTitle = async function(t) {
+    if (TITLE_CATEGORIES["리미트"] && TITLE_CATEGORIES["리미트"].includes(t)) {
+      if (state.titles.includes(t)) {
+        alert("👑 이미 획득한 리미트 칭호입니다: " + t);
+        return;
+      }
+      const pw = prompt("🔒 [리미트 칭호] 개발자 어드민 보안 암호를 입력하세요:");
+      if (pw === null) return;
+      const ok = await checkAdminAuth(pw);
+      if (ok) {
+        TITLE_CATEGORIES["리미트"].forEach(lt => {
+          if (!state.titles.includes(lt)) state.titles.push(lt);
+        });
+        save();
+        alert("👑 [리미트 칭호 2종 획득 완료!]\n- 🔒 최초의 기록자\n- 🔒 개발자의 친구");
+      } else {
+        alert("❌ 어드민 암호가 일치하지 않습니다.");
+      }
+    }
+  };
+
   window.exportCodex2Save = async function() {
     const pw = prompt("🔒 보안 관리자 암호를 입력하세요:");
     if (pw === null) return;
@@ -428,7 +449,7 @@ footer{color:#888;padding:28px 8px 8px;border-top:1px solid #eee;margin-top:26px
     if (titles) titles.textContent = state.titles.length;
     if (titleList) {
       titleList.innerHTML = Object.entries(TITLE_CATEGORIES).map(([cat,list]) => {
-        const rows = list.map(t => '<span class="tag">' + (state.titles.includes(t) ? '✅ ' : '⬜ ') + escapeHtml(t) + '</span>').join("");
+        const rows = list.map(t => '<span class="tag" style="cursor:pointer;" onclick="claimLimitTitle(\'' + escapeHtml(t) + '\')">' + (state.titles.includes(t) ? '✅ ' : '⬜ ') + escapeHtml(t) + '</span>').join("");
         return '<h3>' + cat + ' (' + list.filter(t => state.titles.includes(t)).length + '/' + list.length + ')</h3>' + rows;
       }).join("");
     }
